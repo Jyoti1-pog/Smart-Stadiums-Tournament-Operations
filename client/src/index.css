@@ -1,0 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #232b35 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #232b35;
+  border-radius: 8px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: radial-gradient(1200px 800px at 50% -10%, #0d1a17 0%, #07090c 55%, #05070a 100%);
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-pulse-panel/80 border border-pulse-border backdrop-blur-sm rounded-2xl;
+  }
+  .pill-chip {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium border border-pulse-border bg-pulse-panel2 hover:border-pulse-teal/60 hover:text-pulse-teal transition-colors cursor-pointer;
+  }
+  .stat-tile {
+    @apply glass-card p-4 flex flex-col gap-1;
+  }
+  .accent-text {
+    @apply text-pulse-teal;
+  }
+  .btn-primary {
+    @apply bg-pulse-teal text-black font-semibold rounded-xl px-4 py-2 hover:bg-pulse-teal2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-pulse-panel2 border border-pulse-border text-slate-200 font-medium rounded-xl px-4 py-2 hover:border-pulse-teal/50 transition-colors;
+  }
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.live-dot {
+  animation: pulse-glow 1.8s ease-in-out infinite;
+}
+
+/* Scales the document root, not every descendant — Tailwind's text-*
+   utilities are rem-based (relative to the root), so an em-per-element rule
+   would compound on every level of nesting instead of scaling uniformly. */
+html.a11y-large {
+  font-size: 114%;
+}
