@@ -111,20 +111,41 @@ export async function structuredJSON({ system, user, schema, fallback }) {
   }
 }
 
-// Minimal end-to-end API check for diagnostics: one tiny generateContent
-// call, returning the model's reply or the raw error message.
+// Minimal end-to-end API check for diagnostics: a plain call and a
+// schema-constrained call, each returning the reply or the raw error —
+// mirrors the two request shapes the app actually uses.
 export async function pingAI() {
   if (isOffline()) return { ok: false, mode: "offline", error: "GEMINI_API_KEY not set" };
   const ai = getClient();
+  const out = { model: MODEL };
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: [{ role: "user", parts: [{ text: "Reply with the single word: pong" }] }],
     });
-    return { ok: true, model: MODEL, reply: (response.text || "").trim().slice(0, 50) };
+    out.plain = { ok: true, reply: (response.text || "").trim().slice(0, 50) };
   } catch (err) {
-    return { ok: false, model: MODEL, error: String(err?.message || err).slice(0, 600) };
+    out.plain = { ok: false, error: String(err?.message || err).slice(0, 600) };
   }
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [{ role: "user", parts: [{ text: "Classify severity of: scanner failure at a stadium gate." }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: { severity: { type: "STRING", enum: ["P1", "P2", "P3", "P4"] } },
+          required: ["severity"],
+        },
+      },
+    });
+    out.structured = { ok: true, reply: (response.text || "").trim().slice(0, 80) };
+  } catch (err) {
+    out.structured = { ok: false, error: String(err?.message || err).slice(0, 600) };
+  }
+  out.ok = out.plain.ok && out.structured.ok;
+  return out;
 }
 
 export function parseJsonLoose(text) {
