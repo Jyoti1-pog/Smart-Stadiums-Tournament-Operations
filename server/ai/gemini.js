@@ -1,6 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-export const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+// gemini-flash-latest is Google's rolling alias for the current flash model —
+// it works across account generations (newer keys have no gemini-2.5-* access).
+export const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 
 let client = null;
 export function isOffline() {
@@ -11,6 +13,26 @@ function getClient() {
   if (isOffline()) return null;
   if (!client) client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   return client;
+}
+
+// One retry with a short backoff on transient failures (503 demand spikes,
+// connection resets) so a single blip doesn't drop a demo interaction to the
+// offline fallback.
+function isTransient(err) {
+  const msg = String(err?.message || err);
+  return err?.status === 503 || err?.status === 429 || /ECONNRESET|fetch failed|UNAVAILABLE/i.test(msg);
+}
+
+async function generateWithRetry(ai, params, retries = 1) {
+  try {
+    return await ai.models.generateContent(params);
+  } catch (err) {
+    if (retries > 0 && isTransient(err)) {
+      await new Promise((r) => setTimeout(r, 800));
+      return generateWithRetry(ai, params, retries - 1);
+    }
+    throw err;
+  }
 }
 
 // Runs a full tool-use conversation loop: sends contents + function
@@ -33,7 +55,7 @@ export async function chatWithTools({ system, messages, tools, toolHandlers, max
   };
 
   for (let turn = 0; turn < maxTurns; turn++) {
-    const response = await ai.models.generateContent({ model: MODEL, contents, config });
+    const response = await generateWithRetry(ai, { model: MODEL, contents, config });
 
     const calls = response.functionCalls;
     if (!calls || calls.length === 0) {
@@ -73,7 +95,7 @@ export async function structuredJSON({ system, user, schema, fallback }) {
   if (!ai) return fallback;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateWithRetry(ai, {
       model: MODEL,
       contents: [{ role: "user", parts: [{ text: user }] }],
       config: {

@@ -59,7 +59,7 @@ stadium simulation:
                   └──────────────┼───────────────┘
                                  │
                        Google Gemini API
-                (gemini-2.5-flash, function-calling)
+              (gemini-flash-latest, function-calling)
                                  │
                  offline fallback if no API key set
                                  │
@@ -90,7 +90,7 @@ stadium simulation:
 |---|---|
 | Frontend | React 18 + Vite + Tailwind CSS, two routes: `/fan` and `/ops` |
 | Backend | Node.js + Express, single server (API + static build) |
-| AI | Google Gemini API (`gemini-2.5-flash`) via `@google/genai`, function-calling + schema-enforced JSON |
+| AI | Google Gemini API (`gemini-flash-latest`) via `@google/genai`, function-calling + schema-enforced JSON |
 | Data | In-memory simulation engine, no external services required besides the LLM |
 | Maps | Hand-drawn stylized SVG (no map API) |
 | Realtime | Server-Sent Events (`/api/stream`), 3s polling fallback |
@@ -127,7 +127,7 @@ npm start       # serves API + built client from a single Express process on $PO
 | Var | Default | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | _(unset)_ | Google Gemini API key. Omit to run fully offline with canned, simulation-grounded AI responses. |
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model used for concierge, triage, sitrep, and sustainability |
+| `GEMINI_MODEL` | `gemini-flash-latest` | Gemini model used for concierge, triage, sitrep, and sustainability |
 | `PORT` | `8787` | Express server port |
 | `SIM_SEED` | `fifa2026` | Deterministic seed — same seed reproduces the same demo run |
 | `SIM_MINUTES_PER_TICK` | `1` | Simulated minutes advanced per real second |
