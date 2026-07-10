@@ -21,12 +21,18 @@ export function SimProvider({ children }) {
 
     function startPolling() {
       if (pollRef.current) return;
-      pollRef.current = setInterval(() => {
+      const poll = () => {
         fetch("/api/state")
           .then((r) => r.json())
-          .then((s) => !cancelled && setState(s))
-          .catch(() => {});
-      }, 3000);
+          .then((s) => {
+            if (cancelled) return;
+            setState(s);
+            setConnected(true); // polling works — report live, just like SSE
+          })
+          .catch(() => !cancelled && setConnected(false));
+      };
+      poll();
+      pollRef.current = setInterval(poll, 3000);
     }
 
     try {

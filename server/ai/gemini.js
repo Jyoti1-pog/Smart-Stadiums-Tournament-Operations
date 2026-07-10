@@ -53,7 +53,11 @@ export async function chatWithTools({ system, messages, tools, toolHandlers, max
         result = { error: String(err?.message || err) };
       }
       toolCallsUsed.push({ name: call.name, input: call.args, result });
-      responseParts.push({ functionResponse: { name: call.name, response: result ?? { error: "Unknown tool" } } });
+      // Gemini requires functionResponse.response to be a JSON *object*
+      // (a proto Struct) — wrap arrays and primitives.
+      const wrapped =
+        result && typeof result === "object" && !Array.isArray(result) ? result : { result: result ?? { error: "Unknown tool" } };
+      responseParts.push({ functionResponse: { name: call.name, response: wrapped } });
     }
     contents.push({ role: "user", parts: responseParts });
   }
