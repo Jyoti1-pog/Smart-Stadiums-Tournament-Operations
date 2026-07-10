@@ -62,11 +62,18 @@ export async function chatWithConcierge(messages, { engine, accessibilityMode })
 
   const system = conciergeSystemPrompt({ accessibilityMode });
   const toolHandlers = buildToolHandlers(engine);
-  const { text, toolCallsUsed } = await chatWithTools({
-    system,
-    messages: normalized,
-    tools: CONCIERGE_TOOLS,
-    toolHandlers,
-  });
-  return { role: "assistant", content: text, toolCallsUsed };
+  try {
+    const { text, toolCallsUsed } = await chatWithTools({
+      system,
+      messages: normalized,
+      tools: CONCIERGE_TOOLS,
+      toolHandlers,
+    });
+    return { role: "assistant", content: text, toolCallsUsed };
+  } catch (err) {
+    // Live call failed (quota, network, bad key) — degrade to the grounded
+    // offline reply rather than surfacing an error bubble to the fan.
+    console.error("Live concierge failed, using offline fallback:", err?.message || err);
+    return { role: "assistant", content: offlineReply(normalized, engine), offline: true };
+  }
 }

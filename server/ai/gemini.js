@@ -89,6 +89,22 @@ export async function structuredJSON({ system, user, schema, fallback }) {
   }
 }
 
+// Minimal end-to-end API check for diagnostics: one tiny generateContent
+// call, returning the model's reply or the raw error message.
+export async function pingAI() {
+  if (isOffline()) return { ok: false, mode: "offline", error: "GEMINI_API_KEY not set" };
+  const ai = getClient();
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [{ role: "user", parts: [{ text: "Reply with the single word: pong" }] }],
+    });
+    return { ok: true, model: MODEL, reply: (response.text || "").trim().slice(0, 50) };
+  } catch (err) {
+    return { ok: false, model: MODEL, error: String(err?.message || err).slice(0, 600) };
+  }
+}
+
 export function parseJsonLoose(text) {
   if (!text) return null;
   let cleaned = text.trim();

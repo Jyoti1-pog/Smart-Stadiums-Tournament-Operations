@@ -6,7 +6,7 @@ import { chatWithConcierge } from "./ai/concierge.js";
 import { generateSitrep } from "./ai/sitrep.js";
 import { triageIncident } from "./ai/triage.js";
 import { optimizeSustainability } from "./ai/sustainability.js";
-import { isOffline, MODEL } from "./ai/gemini.js";
+import { isOffline, MODEL, pingAI } from "./ai/gemini.js";
 
 // Single engine per process. Locally it's ticked by a setInterval in
 // server/index.js; on serverless (Vercel) there is no background timer, so
@@ -43,6 +43,12 @@ export function createApp({ lazyTick = false } = {}) {
 
   app.get("/api/health", (req, res) => {
     res.json({ aiMode: isOffline() ? "offline" : "live", model: MODEL });
+  });
+
+  // Live round-trip check against the Gemini API — surfaces the real error
+  // when a key is present but calls fail (bad key, region, quota, etc.).
+  app.get("/api/health/ai", async (req, res) => {
+    res.json(await pingAI());
   });
 
   // --- Core simulation state ---
